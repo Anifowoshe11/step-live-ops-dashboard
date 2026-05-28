@@ -1,0 +1,57 @@
+[build]
+  command   = "npm run build"
+  publish   = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# ── Security headers on every response ──────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Block the page from being embedded in an iframe (clickjacking protection)
+    X-Frame-Options = "DENY"
+
+    # Stop browsers guessing MIME types — prevents content-sniffing attacks
+    X-Content-Type-Options = "nosniff"
+
+    # Reduce information leaked to third-party sites via Referer header
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+    # Disable browser features not needed by this app
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+
+    # Strict Transport Security — force HTTPS for 1 year (Netlify enforces HTTPS anyway)
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+    # Content Security Policy — whitelist only what the app actually needs
+    Content-Security-Policy = """
+      default-src 'self';
+      script-src 'self';
+      style-src 'self' 'unsafe-inline';
+      connect-src 'self'
+        https://identitytoolkit.googleapis.com
+        https://securetoken.googleapis.com
+        https://www.googleapis.com
+        https://*.googleapis.com
+        https://*.firebaseio.com
+        https://docs.google.com
+        wss://*.firebaseio.com;
+      img-src 'self' data: https:;
+      font-src 'self';
+      frame-ancestors 'none';
+      form-action 'self';
+      base-uri 'self';
+      object-src 'none'
+    """
+
+# ── Cache static assets aggressively, never cache HTML ──────────────────────
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"

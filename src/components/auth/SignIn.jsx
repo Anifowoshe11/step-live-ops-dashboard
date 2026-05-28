@@ -25,16 +25,34 @@ export default function SignIn() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [failCount, setFailCount] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState(null);
+
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_SECONDS = 60;
+
+  const isLocked = lockedUntil && Date.now() < lockedUntil;
+  const lockSecsLeft = isLocked ? Math.ceil((lockedUntil - Date.now()) / 1000) : 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isLocked) return;
     setError('');
     setLoading(true);
     try {
       await signIn(email, password);
+      setFailCount(0);
       navigate('/');
     } catch (err) {
-      setError(getAuthErrorMessage(err.code));
+      const next = failCount + 1;
+      setFailCount(next);
+      if (next >= MAX_ATTEMPTS) {
+        setLockedUntil(Date.now() + LOCKOUT_SECONDS * 1000);
+        setFailCount(0);
+        setError(`Too many failed attempts. Please wait ${LOCKOUT_SECONDS} seconds before trying again.`);
+      } else {
+        setError(`${getAuthErrorMessage(err.code)} (${MAX_ATTEMPTS - next} attempt${MAX_ATTEMPTS - next !== 1 ? 's' : ''} left)`);
+      }
     } finally {
       setLoading(false);
     }
@@ -53,7 +71,12 @@ export default function SignIn() {
         <div className="auth-title">Welcome back</div>
         <div className="auth-sub">Sign in to access the operations dashboard</div>
 
-        {error && <div className="auth-err">{error}</div>}
+        {isLocked && (
+          <div className="auth-err">
+            🔒 Account temporarily locked. Try again in {lockSecsLeft}s.
+          </div>
+        )}
+        {!isLocked && error && <div className="auth-err">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="auth-field">
@@ -72,8 +95,8 @@ export default function SignIn() {
               </button>
             </div>
           </div>
-          <button type="submit" className="auth-btn" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign in'}
+          <button type="submit" className="auth-btn" disabled={loading || isLocked}>
+            {isLocked ? `Locked — wait ${lockSecsLeft}s` : loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
 

@@ -30,6 +30,7 @@ export default function SignUp() {
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState('');
+  const [emailTaken, setEmailTaken] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const rules = {
@@ -49,13 +50,19 @@ export default function SignUp() {
       if (!rules.length)  { setError('Password must be at least 8 characters.'); return; }
     }
     if (password !== confirm) { setError('Passwords do not match.'); return; }
+    setEmailTaken(false);
     setLoading(true);
     try {
       const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
       await signUp(email, password, displayName);
       navigate('/');
     } catch (err) {
-      setError(getAuthErrorMessage(err.code));
+      if (err.code === 'auth/email-already-in-use') {
+        setEmailTaken(true);
+        setError('');
+      } else {
+        setError(getAuthErrorMessage(err.code));
+      }
     } finally {
       setLoading(false);
     }
@@ -75,6 +82,15 @@ export default function SignUp() {
         <div className="auth-sub">Join the STEP operations team</div>
 
         {error && <div className="auth-err">{error}</div>}
+        {emailTaken && (
+          <div className="auth-email-taken">
+            <div style={{ fontWeight: 600, marginBottom: '4px' }}>This email is already registered</div>
+            <div style={{ fontSize: '12px' }}>
+              An account with <b>{email}</b> already exists.{' '}
+              <Link to="/signin" style={{ color: 'var(--blue)', fontWeight: 600 }}>Sign in instead →</Link>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="r g2" style={{ gap: '10px', marginBottom: '14px' }}>

@@ -5,7 +5,7 @@ const SHEET_URLS = {
   onboarding:
     'https://docs.google.com/spreadsheets/d/1D4Ms9jutyhM2kuVmSN5S1_820sAu2PQU9YT1lJwZPD8/export?format=csv&gid=2096627106',
   daily:
-    'https://docs.google.com/spreadsheets/d/1sOnkQzpPuY999rZJNX-FhP8u2zHS2KMJwmmL4GklvAA/export?format=csv&gid=1132172568',
+    'https://docs.google.com/spreadsheets/d/1ryixaP5g9VRHjYTtKJW1SzuE04KkbBir-wSYILyzhHY/export?format=csv&gid=1136748544',
 };
 
 exports.handler = async function (event) {

@@ -2,11 +2,12 @@ import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 
 const PAGES = [
-  { id: 'overview',  label: 'Overview' },
-  { id: 'fieldops',  label: 'Daily Report' },
-  { id: 'merchants', label: 'Network' },
-  { id: 'agents',    label: 'Agents' },
-  { id: 'insights',  label: 'Insights' },
+  { id: 'overview',    label: 'Overview' },
+  { id: 'fieldops',    label: 'Daily Report' },
+  { id: 'merchants',   label: 'Network' },
+  { id: 'agents',      label: 'Agents' },
+  { id: 'insights',    label: 'Insights' },
+  { id: 'escalations', label: '🚨 Escalations' },
 ];
 
 export default function Nav({ activePage, onPageChange }) {

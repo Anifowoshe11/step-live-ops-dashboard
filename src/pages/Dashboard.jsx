@@ -7,6 +7,7 @@ import FieldOps from './FieldOps';
 import Merchants from './Merchants';
 import Agents from './Agents';
 import Insights from './Insights';
+import Escalations from './Escalations';
 import { useAuth } from '../context/AuthContext';
 
 function getGreeting() {
@@ -63,7 +64,8 @@ export default function Dashboard() {
         {activePage === 'fieldops'  && <FieldOps />}
         {activePage === 'merchants' && <Merchants />}
         {activePage === 'agents'    && <Agents />}
-        {activePage === 'insights'  && <Insights />}
+        {activePage === 'insights'    && <Insights />}
+        {activePage === 'escalations' && <Escalations />}
       </div>
     </>
   );

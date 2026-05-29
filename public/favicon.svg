@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4db6ac"/>
+      <stop offset="50%" stop-color="#43a87a"/>
+      <stop offset="100%" stop-color="#2e7d5e"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+
+  <!-- List icon — small square bullet + line, 3 rows -->
+  <rect x="13" y="16" width="7" height="7" rx="1.5" fill="white" opacity="0.95"/>
+  <rect x="25" y="17.5" width="26" height="4" rx="2" fill="white" opacity="0.95"/>
+
+  <rect x="13" y="28" width="7" height="7" rx="1.5" fill="white" opacity="0.95"/>
+  <rect x="25" y="29.5" width="26" height="4" rx="2" fill="white" opacity="0.95"/>
+
+  <rect x="13" y="40" width="7" height="7" rx="1.5" fill="white" opacity="0.95"/>
+  <rect x="25" y="41.5" width="26" height="4" rx="2" fill="white" opacity="0.95"/>
+</svg>

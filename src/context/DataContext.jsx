@@ -95,11 +95,20 @@ export function DataProvider({ children }) {
     setIsRefreshing(true);
     setStatus({ type: 'loading', message: 'Fetching live data from Google Sheets...' });
     try {
+      // In production (Netlify) fetch via server-side proxy to avoid CORS.
+      // In local dev, hit the sheets directly.
+      const urls = import.meta.env.PROD
+        ? {
+            onboarding: '/.netlify/functions/sheets?source=onboarding',
+            daily:      '/.netlify/functions/sheets?source=daily',
+          }
+        : SHEET_URLS;
+
       const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 8000);
+      const timer = setTimeout(() => ctrl.abort(), 10000);
       const [r1, r2] = await Promise.all([
-        fetch(SHEET_URLS.onboarding, { signal: ctrl.signal, redirect: 'follow' }),
-        fetch(SHEET_URLS.daily,      { signal: ctrl.signal, redirect: 'follow' }),
+        fetch(urls.onboarding, { signal: ctrl.signal }),
+        fetch(urls.daily,      { signal: ctrl.signal }),
       ]);
       clearTimeout(timer);
       if (!r1.ok || !r2.ok) throw new Error('Sheet returned ' + (!r1.ok ? r1.status : r2.status));

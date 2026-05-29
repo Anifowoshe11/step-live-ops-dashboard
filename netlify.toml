@@ -5,6 +5,9 @@
 [build.environment]
   NODE_VERSION = "20"
 
+[functions]
+  directory = "netlify/functions"
+
 # ── Security headers on every response ──────────────────────────────────────
 [[headers]]
   for = "/*"
@@ -35,7 +38,6 @@
         https://www.googleapis.com
         https://*.googleapis.com
         https://*.firebaseio.com
-        https://docs.google.com
         wss://*.firebaseio.com;
       img-src 'self' data: https:;
       font-src 'self';

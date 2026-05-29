@@ -28,7 +28,7 @@ function Pill({ label, styleMap }) {
   );
 }
 
-export default function Escalations() {
+export default function Escalations({ onOpenCountChange }) {
   const { filtered, filters }  = useData();
   const { user }               = useAuth();
   const D = filtered.daily;
@@ -152,6 +152,11 @@ export default function Escalations() {
   // ── Derived counts ───────────────────────────────────────────────────────
   const openCount     = records.filter(r => r['Status'] === 'Open').length;
   const criticalCount = records.filter(r => r['Priority'] === 'Critical' && r['Status'] !== 'Resolved').length;
+
+  // Report open count up to Dashboard for badge
+  useEffect(() => {
+    if (onOpenCountChange) onOpenCountChange(openCount);
+  }, [openCount, onOpenCountChange]);
   const resolvedCount = records.filter(r => r['Status'] === 'Resolved').length;
 
   // ── Setup screen ─────────────────────────────────────────────────────────

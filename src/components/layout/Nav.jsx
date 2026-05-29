@@ -10,7 +10,7 @@ const PAGES = [
   { id: 'escalations', label: '🚨 Escalations' },
 ];
 
-export default function Nav({ activePage, onPageChange }) {
+export default function Nav({ activePage, onPageChange, badges = {} }) {
   const { signOut, user } = useAuth();
   const { refresh, isRefreshing } = useData();
 
@@ -24,15 +24,21 @@ export default function Nav({ activePage, onPageChange }) {
       <span className="nav-title">STEP Network Live Ops</span>
       <div className="nav-sep" />
       <div className="tabs">
-        {PAGES.map((p) => (
-          <button
-            key={p.id}
-            className={`tab${activePage === p.id ? ' active' : ''}`}
-            onClick={() => onPageChange(p.id)}
-          >
-            {p.label}
-          </button>
-        ))}
+        {PAGES.map((p) => {
+          const badge = badges[p.id] || 0;
+          return (
+            <button
+              key={p.id}
+              className={`tab${activePage === p.id ? ' active' : ''}`}
+              onClick={() => onPageChange(p.id)}
+            >
+              {p.label}
+              {badge > 0 && (
+                <span className="tab-badge">{badge > 99 ? '99+' : badge}</span>
+              )}
+            </button>
+          );
+        })}
       </div>
       <div className="nav-r">
         <div className="live-pill">

@@ -77,6 +77,8 @@ export function DataProvider({ children }) {
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
+  // Tracks new rows found since last fetch — consumed by Dashboard for notifications
+  const [newRowDelta, setNewRowDelta] = useState({ daily: 0, onboarding: 0, agents: [] });
 
   useEffect(() => {
     setFiltered(applyFilters(raw, filters));
@@ -91,9 +93,13 @@ export function DataProvider({ children }) {
     setFilters(INIT_FILTERS);
   }, []);
 
-  const refresh = useCallback(async () => {
-    setIsRefreshing(true);
-    setStatus({ type: 'loading', message: 'Fetching live data from Google Sheets...' });
+  const clearNewRowDelta = useCallback(() => {
+    setNewRowDelta({ daily: 0, onboarding: 0, agents: [] });
+  }, []);
+
+  const refresh = useCallback(async (silent = false) => {
+    if (!silent) setIsRefreshing(true);
+    if (!silent) setStatus({ type: 'loading', message: 'Fetching live data from Google Sheets...' });
     try {
       // In production (Netlify) fetch via server-side proxy to avoid CORS.
       // In local dev, hit the sheets directly.
@@ -125,32 +131,59 @@ export function DataProvider({ children }) {
         onboarding: p1.length ? p1 : raw.onboarding,
         daily:      p2.length ? p2 : raw.daily,
       };
+      // Detect new rows and which agents submitted new reports
+      const prevDailyCount = raw.daily.length;
+      const prevOnbCount   = raw.onboarding.length;
+      const prevAgents = new Set(raw.daily.map(r => r['Agent Name']));
+      const newAgents  = newRaw.daily
+        .filter(r => !prevAgents.has(r['Agent Name']) || newRaw.daily.length > prevDailyCount)
+        .map(r => r['Agent Name'])
+        .filter((v, i, a) => a.indexOf(v) === i);
+
+      const dailyDelta = Math.max(0, newRaw.daily.length - prevDailyCount);
+      const onbDelta   = Math.max(0, newRaw.onboarding.length - prevOnbCount);
+      if (dailyDelta > 0 || onbDelta > 0) {
+        setNewRowDelta({ daily: dailyDelta, onboarding: onbDelta, agents: newAgents });
+      }
+
       setRaw(newRaw);
       const now = new Date();
       setLastUpdated(now);
-      setStatus({
-        type: 'ok',
-        message: `✓ Live — ${newRaw.onboarding.length} onboarding + ${newRaw.daily.length} daily — synced at ${now.toLocaleTimeString()}`,
-      });
+      if (!silent) {
+        setStatus({
+          type: 'ok',
+          message: `✓ Live — ${newRaw.onboarding.length} onboarding + ${newRaw.daily.length} daily — synced at ${now.toLocaleTimeString()}`,
+        });
+      }
     } catch (e) {
-      setStatus({
-        type: 'err',
-        message: `Could not reach Google Sheets (${e.message || 'blocked'}) — showing last known data.`,
-      });
+      if (!silent) {
+        setStatus({
+          type: 'err',
+          message: `Could not reach Google Sheets (${e.message || 'blocked'}) — showing last known data.`,
+        });
+      }
     }
-    setIsRefreshing(false);
+    if (!silent) setIsRefreshing(false);
   }, [raw]);
 
+  // Initial load
   useEffect(() => {
     const t = setTimeout(() => refresh(), 300);
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Silent auto-poll every 60s
+  useEffect(() => {
+    const interval = setInterval(() => refresh(true), 60000);
+    return () => clearInterval(interval);
+  }, [refresh]);
 
   return (
     <DataContext.Provider value={{
       raw, filtered, filters, filterOptions,
       setFilter, clearAllFilters,
       refresh, status, isRefreshing, lastUpdated,
+      newRowDelta, clearNewRowDelta,
     }}>
       {children}
     </DataContext.Provider>

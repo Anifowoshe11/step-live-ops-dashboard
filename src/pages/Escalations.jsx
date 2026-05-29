@@ -76,7 +76,11 @@ export default function Escalations() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchRecords(); }, [fetchRecords]);
+  useEffect(() => {
+    fetchRecords();
+    const interval = setInterval(fetchRecords, 30000); // auto-refresh every 30s
+    return () => clearInterval(interval);
+  }, [fetchRecords]);
 
   // Refresh pre-fill when live data changes
   useEffect(() => {

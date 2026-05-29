@@ -17,6 +17,10 @@ export default function Nav({ activePage, onPageChange, badges = {} }) {
   return (
     <nav className="nav">
       <img src="/logo.svg" alt="STEP Network" className="nav-logo" />
+      <div className="nav-brand">
+        <span className="nav-brand-title">STEP Live Updates</span>
+        <span className="nav-brand-sub">Dashboard</span>
+      </div>
       <div className="nav-sep" />
       <div className="tabs">
         {PAGES.map((p) => {

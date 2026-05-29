@@ -72,10 +72,7 @@ export default function SignUp() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-logo">
-          <div className="logo">
-            <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" /></svg>
-          </div>
-          <span className="nav-title">STEP Network Live Ops</span>
+          <img src="/logo.svg" alt="STEP Network" style={{ height: '44px', width: 'auto' }} />
         </div>
 
         <div className="auth-title">Create your account</div>

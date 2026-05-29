@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 250">
+  <!-- Background -->
+  <rect width="460" height="250" fill="#1d2d60"/>
+
+  <!-- S -->
+  <text x="28" y="186"
+    font-family="Arial Black, 'Arial Bold', Impact, sans-serif"
+    font-weight="900" font-size="138" fill="#ffffff">S</text>
+
+  <!-- T -->
+  <text x="116" y="186"
+    font-family="Arial Black, 'Arial Bold', Impact, sans-serif"
+    font-weight="900" font-size="138" fill="#ffffff">T</text>
+
+  <!-- Diagonal gold stripes replacing the E -->
+  <!-- 3 parallel stripes at ~38° angle, centred in the E glyph slot -->
+  <g>
+    <rect x="195" y="53"  width="80" height="17" rx="5" fill="#e8a020" transform="rotate(-38 235 61)"/>
+    <rect x="195" y="92"  width="80" height="17" rx="5" fill="#e8a020" transform="rotate(-38 235 100)"/>
+    <rect x="195" y="131" width="80" height="17" rx="5" fill="#e8a020" transform="rotate(-38 235 139)"/>
+  </g>
+
+  <!-- P -->
+  <text x="296" y="186"
+    font-family="Arial Black, 'Arial Bold', Impact, sans-serif"
+    font-weight="900" font-size="138" fill="#ffffff">P</text>
+
+  <!-- Gold underline -->
+  <rect x="28" y="207" width="404" height="13" rx="5" fill="#e8a020"/>
+</svg>

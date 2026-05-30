@@ -77,7 +77,7 @@ export default function Insights() {
           <b>{allAgents.length}</b> agent(s) reporting
         </div>
         {hasFeedback ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="feedback-grid">
             {feedbackRows.map((row, i) => (
               <FeedbackCard key={i} row={row} />
             ))}

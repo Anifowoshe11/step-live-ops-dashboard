@@ -273,10 +273,125 @@ tr:hover td{background:#fafbfc;}
   font-size:13px;padding:0;flex-shrink:0;line-height:1;margin-top:1px;}
 .toast-close:hover{color:var(--text);}
 
-/* RESPONSIVE */
-@media(max-width:800px){
-  .g2,.g3,.g4,.g5,.g32{grid-template-columns:1fr;}
+/* FEEDBACK GRID — always 2 columns */
+.feedback-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+/* MOBILE BOTTOM NAV */
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:var(--surface);border-top:1px solid var(--border);
+  height:60px;box-shadow:0 -2px 10px rgba(0,0,0,.08);}
+.mobile-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;gap:2px;border:none;background:none;cursor:pointer;padding:4px 2px;
+  position:relative;font-family:inherit;color:var(--muted);transition:color .15s;min-width:0;}
+.mobile-tab.active{color:var(--blue);}
+.mobile-tab.active .mobile-tab-icon{fill:var(--blue);}
+.mobile-tab-icon{width:20px;height:20px;fill:var(--muted);flex-shrink:0;transition:fill .15s;}
+.mobile-tab-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;color:inherit;}
+
+/* ── TABLET (≤ 1100px) ────────────────────────────────────────────────── */
+@media(max-width:1100px){
+  .g5{grid-template-columns:repeat(3,1fr);}
+  .g4{grid-template-columns:repeat(2,1fr);}
+  .tabs{gap:1px;}
+  .tab{padding:5px 10px;font-size:11px;}
+  .nav-brand-title{font-size:13px;}
+}
+
+/* ── MOBILE (≤ 768px) ─────────────────────────────────────────────────── */
+@media(max-width:768px){
+  /* Nav */
+  .nav{padding:0 12px;gap:8px;height:54px;}
+  .nav-logo{height:30px;}
   .tabs{display:none;}
   .nav-user{display:none;}
-  .toast-container{bottom:10px;right:10px;left:10px;max-width:100%;}
+  .live-pill-text{display:none;}
+  .ref-btn-text{display:none;}
+  .ref-btn{padding:7px 10px;}
+
+  /* Mobile bottom nav appears */
+  .mobile-nav{display:flex;}
+
+  /* Control bar — horizontal scroll instead of wrapping */
+  .ctrl{overflow-x:auto;flex-wrap:nowrap;padding:6px 12px 8px;
+    min-height:50px;gap:6px;top:54px;-webkit-overflow-scrolling:touch;}
+  .ctrl::-webkit-scrollbar{display:none;}
+  .flt-group{flex-shrink:0;}
+  .flt-sep{display:none;}
+  .ctrl-r{flex-shrink:0;}
+  .date-lbl{white-space:nowrap;}
+
+  /* Status bar */
+  .status{padding:4px 12px;font-size:10px;}
+
+  /* Canvas — add bottom padding for mobile nav, reduce sides */
+  .canvas{padding:12px 10px 72px;}
+
+  /* Grids — keep 2 columns minimum */
+  .g5{grid-template-columns:repeat(2,1fr);}
+  .g3{grid-template-columns:repeat(2,1fr);}
+  .g32{grid-template-columns:1fr 1fr;}
+
+  /* Scorecards — slightly compact */
+  .sc{padding:11px 12px;}
+  .sc-v{font-size:24px;}
+
+  /* Cards */
+  .card{padding:12px 14px;}
+
+  /* Auth */
+  .auth-card{padding:28px 20px;margin:12px;}
+
+  /* Welcome banner */
+  .welcome-banner{padding:10px 14px;}
+  .welcome-greeting{font-size:13px;}
+  .welcome-note{font-size:11px;}
+
+  /* Toast */
+  .toast-container{bottom:68px;right:10px;left:10px;max-width:100%;}
+
+  /* Source banner */
+  .src-banner{gap:10px;padding:9px 12px;}
+  .src-banner-item{font-size:11px;}
+}
+
+/* ── SMALL PHONE (≤ 480px) ────────────────────────────────────────────── */
+@media(max-width:480px){
+  /* Nav brand text hidden — logo only */
+  .nav-brand{display:none;}
+  .nav-sep{display:none;}
+  .live-pill{display:none;}
+
+  /* Grids — still 2 columns, never single! */
+  .g5{grid-template-columns:repeat(2,1fr);}
+  .g3{grid-template-columns:repeat(2,1fr);}
+  .g32{grid-template-columns:1fr;}  /* wide+narrow layout → single col at tiny sizes */
+  .g2{grid-template-columns:1fr 1fr;} /* charts always side-by-side */
+
+  /* Scorecard value smaller */
+  .sc-v{font-size:20px;}
+  .sc{padding:10px 10px;}
+  .sc-l{font-size:9px;}
+
+  /* Canvas */
+  .canvas{padding:8px 8px 72px;}
+
+  /* Cards */
+  .card{padding:10px 12px;}
+
+  /* Feedback grid — stays 2 columns even on smallest screens */
+  .feedback-grid{grid-template-columns:1fr 1fr;gap:8px;}
+
+  /* Auth card full width */
+  .auth-card{padding:24px 16px;margin:8px;border-radius:10px;}
+  .auth-title{font-size:17px;}
+
+  /* Tables — compact */
+  td,th{padding:7px 8px;}
+
+  /* Control bar filters smaller */
+  .flt{min-width:90px;font-size:11px;}
+
+  /* Sec header */
+  .sec{font-size:9px;}
 }

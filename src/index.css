@@ -312,32 +312,50 @@ tr:hover td{background:#fafbfc;}
   /* Mobile bottom nav appears */
   .mobile-nav{display:flex;}
 
-  /* Control bar — horizontal scroll instead of wrapping */
-  .ctrl{overflow-x:auto;flex-wrap:nowrap;padding:6px 12px 8px;
-    min-height:50px;gap:6px;top:54px;-webkit-overflow-scrolling:touch;}
+  /* Control bar — horizontal scroll, never wrap */
+  .ctrl{overflow-x:auto;flex-wrap:nowrap;padding:5px 12px 7px;
+    min-height:46px;gap:6px;top:54px;-webkit-overflow-scrolling:touch;}
   .ctrl::-webkit-scrollbar{display:none;}
-  .flt-group{flex-shrink:0;}
+  .flt-group{flex-shrink:0;padding-top:13px;}
+  .flt-group-lbl{font-size:8px;}
   .flt-sep{display:none;}
   .ctrl-r{flex-shrink:0;}
-  .date-lbl{white-space:nowrap;}
+  .date-lbl{white-space:nowrap;font-size:10px;}
+  .rec-count{font-size:10px;}
+  .flt{min-width:95px;font-size:11px;}
 
   /* Status bar */
   .status{padding:4px 12px;font-size:10px;}
 
-  /* Canvas — add bottom padding for mobile nav, reduce sides */
-  .canvas{padding:12px 10px 72px;}
+  /* Canvas — bottom padding for mobile nav */
+  .canvas{padding:10px 10px 72px;}
 
-  /* Grids — keep 2 columns minimum */
+  /* Grid adjustments */
   .g5{grid-template-columns:repeat(2,1fr);}
   .g3{grid-template-columns:repeat(2,1fr);}
   .g32{grid-template-columns:1fr 1fr;}
+  .r{gap:8px;margin-bottom:8px;}
 
-  /* Scorecards — slightly compact */
-  .sc{padding:11px 12px;}
-  .sc-v{font-size:24px;}
+  /* ★ Chart heights — override inline styles on mobile */
+  .cw{height:145px !important;}
+
+  /* Scorecards */
+  .sc{padding:10px 11px;}
+  .sc-v{font-size:22px;}
+  .sc-src{margin-bottom:4px;font-size:8px;}
 
   /* Cards */
-  .card{padding:12px 14px;}
+  .card{padding:11px 12px;}
+  .ct{font-size:12px;}
+  .cs{font-size:10px;margin-bottom:8px;}
+
+  /* Source banner compact */
+  .src-banner{gap:8px;padding:8px 10px;margin-bottom:10px;}
+  .src-banner-item{font-size:10px;}
+  .src-banner-label{font-size:9px;}
+
+  /* Section headers */
+  .sec{font-size:9px;margin-bottom:7px;}
 
   /* Auth */
   .auth-card{padding:28px 20px;margin:12px;}
@@ -349,49 +367,53 @@ tr:hover td{background:#fafbfc;}
 
   /* Toast */
   .toast-container{bottom:68px;right:10px;left:10px;max-width:100%;}
-
-  /* Source banner */
-  .src-banner{gap:10px;padding:9px 12px;}
-  .src-banner-item{font-size:11px;}
 }
 
 /* ── SMALL PHONE (≤ 480px) ────────────────────────────────────────────── */
 @media(max-width:480px){
-  /* Nav brand text hidden — logo only */
+  /* Nav brand hidden — logo + buttons only */
   .nav-brand{display:none;}
   .nav-sep{display:none;}
   .live-pill{display:none;}
 
-  /* Grids — still 2 columns, never single! */
+  /* Grids — always 2 columns, NEVER single col (except g32) */
   .g5{grid-template-columns:repeat(2,1fr);}
+  .g4{grid-template-columns:repeat(2,1fr);}
   .g3{grid-template-columns:repeat(2,1fr);}
-  .g32{grid-template-columns:1fr;}  /* wide+narrow layout → single col at tiny sizes */
-  .g2{grid-template-columns:1fr 1fr;} /* charts always side-by-side */
+  .g2{grid-template-columns:1fr 1fr;}
+  .g32{grid-template-columns:1fr;}
 
-  /* Scorecard value smaller */
-  .sc-v{font-size:20px;}
-  .sc{padding:10px 10px;}
-  .sc-l{font-size:9px;}
+  /* ★ Charts even smaller on tiny screens */
+  .cw{height:125px !important;}
+
+  /* Scorecards compact */
+  .sc-v{font-size:18px;}
+  .sc{padding:8px 9px;}
+  .sc-l{font-size:8px;}
+  .sc-s{font-size:10px;}
+  .sc-src{padding:1px 5px;font-size:7px;margin-bottom:3px;}
 
   /* Canvas */
   .canvas{padding:8px 8px 72px;}
 
   /* Cards */
-  .card{padding:10px 12px;}
+  .card{padding:9px 10px;}
+  .ct{font-size:11px;}
+  .cs{font-size:10px;margin-bottom:6px;}
 
-  /* Feedback grid — stays 2 columns even on smallest screens */
-  .feedback-grid{grid-template-columns:1fr 1fr;gap:8px;}
+  /* Feedback grid — always 2 columns */
+  .feedback-grid{grid-template-columns:1fr 1fr;gap:6px;}
 
-  /* Auth card full width */
-  .auth-card{padding:24px 16px;margin:8px;border-radius:10px;}
-  .auth-title{font-size:17px;}
+  /* Auth */
+  .auth-card{padding:22px 14px;margin:8px;border-radius:10px;}
+  .auth-title{font-size:16px;}
 
-  /* Tables — compact */
-  td,th{padding:7px 8px;}
+  /* Tables — compact + scrollable */
+  td,th{padding:6px 8px;font-size:10px;}
 
-  /* Control bar filters smaller */
-  .flt{min-width:90px;font-size:11px;}
+  /* Progress bars */
+  .prog-meta{font-size:10px;}
 
-  /* Sec header */
-  .sec{font-size:9px;}
+  /* Section header */
+  .sec{font-size:8px;margin-bottom:6px;}
 }

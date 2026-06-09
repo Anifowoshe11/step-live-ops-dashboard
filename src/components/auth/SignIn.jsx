@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getAuthErrorMessage } from '../../utils/dataUtils';
 
@@ -19,6 +19,7 @@ function EyeIcon({ open }) {
 
 export default function SignIn() {
   const { signIn } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,6 +31,7 @@ export default function SignIn() {
 
   const MAX_ATTEMPTS = 5;
   const LOCKOUT_SECONDS = 60;
+  const routeMessage = useMemo(() => location.state?.message || '', [location.state]);
 
   const isLocked = lockedUntil && Date.now() < lockedUntil;
   const lockSecsLeft = isLocked ? Math.ceil((lockedUntil - Date.now()) / 1000) : 0;
@@ -68,6 +70,7 @@ export default function SignIn() {
         <div className="auth-title">Welcome back</div>
         <div className="auth-sub">Sign in to access the operations dashboard</div>
 
+        {routeMessage && <div className="auth-info">{routeMessage}</div>}
         {isLocked && (
           <div className="auth-err">
             🔒 Account temporarily locked. Try again in {lockSecsLeft}s.

@@ -1,25 +1,21 @@
-// Server-side proxy — fetches Google Sheets CSV so the browser never hits them directly.
-// This bypasses CORS entirely because the request comes from Netlify's servers, not the browser.
-
-const SHEET_URLS = {
-  onboarding:
-    'https://docs.google.com/spreadsheets/d/1D4Ms9jutyhM2kuVmSN5S1_820sAu2PQU9YT1lJwZPD8/export?format=csv&gid=2096627106',
-  daily:
-    'https://docs.google.com/spreadsheets/d/1ryixaP5g9VRHjYTtKJW1SzuE04KkbBir-wSYILyzhHY/export?format=csv&gid=1136748544',
-};
+// Server-side Google Sheets proxy.
+// Update the source URLs in src/config/productionSheets.js if the workbook or gid changes.
 
 exports.handler = async function (event) {
+  const { PRODUCTION_SHEETS } = await import('../../src/config/productionSheets.js');
   const source = event.queryStringParameters && event.queryStringParameters.source;
 
-  if (!source || !SHEET_URLS[source]) {
+  if (!source || !PRODUCTION_SHEETS[source]) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'Invalid source. Use ?source=onboarding or ?source=daily' }),
+      body: JSON.stringify({
+        error: 'Invalid source. Use ?source=merchantOnboarding or ?source=finalDayReport',
+      }),
     };
   }
 
   try {
-    const response = await fetch(SHEET_URLS[source], { redirect: 'follow' });
+    const response = await fetch(PRODUCTION_SHEETS[source].csvUrl, { redirect: 'follow' });
     if (!response.ok) throw new Error(`Google Sheets returned HTTP ${response.status}`);
     const csv = await response.text();
     return {

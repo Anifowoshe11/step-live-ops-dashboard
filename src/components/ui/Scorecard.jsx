@@ -1,8 +1,8 @@
 export default function Scorecard({ label, value, sub, subType = '', colorClass = 'bl', source = '' }) {
   const srcClass =
-    source === 'Onboarding DB' ? 'onboarding'
-    : source === 'Daily DB' ? 'daily'
-    : source === 'Both DBs' ? 'both'
+    source === 'Merchant Onboarding Sheet' ? 'onboarding'
+    : source === 'Final Day Report Sheet' ? 'daily'
+    : source === 'Both Sheets' ? 'both'
     : '';
   return (
     <div className={`sc ${colorClass}`}>

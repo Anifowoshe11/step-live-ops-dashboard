@@ -208,7 +208,9 @@ tr:hover td{background:#fafbfc;}
 .quality-value{font-size:20px;font-weight:700;color:var(--text);white-space:nowrap;}
 .records-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
 .records-search{max-width:240px;}
+.filter-date{width:150px;min-width:150px;}
 .records-count{font-size:11px;color:var(--muted);margin-left:auto;}
+.agent-trend-chart{height:280px;}
 .table-subhead{font-size:9px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;}
 .debug-panel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px;}
 .debug-list{border:1px solid var(--border2);border-radius:8px;padding:12px;background:#fafbfc;}
@@ -396,6 +398,8 @@ tr:hover td{background:#fafbfc;}
   .debug-panel-grid{grid-template-columns:1fr;}
   .mapping-grid{grid-template-columns:1fr;}
   .records-count{margin-left:0;}
+  .filter-date{width:140px;min-width:140px;}
+  .agent-trend-chart{height:240px;}
 
   /* Source banner compact */
   .src-banner{gap:8px;padding:8px 10px;margin-bottom:10px;}
@@ -459,6 +463,8 @@ tr:hover td{background:#fafbfc;}
 
   /* Tables — compact + scrollable */
   td,th{padding:6px 8px;font-size:10px;}
+  .filter-date{width:100%;min-width:0;}
+  .agent-trend-chart{height:210px;}
 
   /* Progress bars */
   .prog-meta{font-size:10px;}

@@ -168,6 +168,37 @@ function isMerchantOnboardingType(value) {
   return MERCHANT_ONBOARDING_TYPE_ALIASES.includes(normalizeText(value));
 }
 
+function isAffirmativeValue(value) {
+  const normalized = normalizeText(value);
+  return ['yes', 'y', 'true', 'interested', 'active', 'enabled'].includes(normalized);
+}
+
+function isHighReadinessValue(value) {
+  const normalized = normalizeText(value);
+  return (
+    normalized === 'high' ||
+    normalized === 'high readiness' ||
+    normalized === 'very high' ||
+    normalized.startsWith('high ')
+  );
+}
+
+function sortDateKey(left, right) {
+  if (left === 'unknown' && right === 'unknown') {
+    return 0;
+  }
+
+  if (left === 'unknown') {
+    return 1;
+  }
+
+  if (right === 'unknown') {
+    return -1;
+  }
+
+  return left.localeCompare(right);
+}
+
 function isStrictNumericValue(value) {
   if (value === undefined || value === null || value === '') {
     return false;
@@ -210,16 +241,21 @@ export function transformMerchantOnboardingRows(rows, meta = {}) {
 
     const submittedAt = parseDateValue(pickMappedValue(row, resolvedColumns.resolvedMap.submittedAt));
     const onboardingType = pickMappedValue(row, resolvedColumns.resolvedMap.onboardingType);
-    const agentName = pickMappedValue(row, resolvedColumns.resolvedMap.agentName);
+    const rawAgentName = pickMappedValue(row, resolvedColumns.resolvedMap.agentName);
+    const rawZone = pickMappedValue(row, resolvedColumns.resolvedMap.zone);
+    const rawReadiness = pickMappedValue(row, resolvedColumns.resolvedMap.readiness);
+    const rawWantsQr = pickMappedValue(row, resolvedColumns.resolvedMap.wantsQr);
+    const rawStorePhoto = pickMappedValue(row, resolvedColumns.resolvedMap.storePhoto);
+    const agentName = rawAgentName || 'Unassigned';
     const isMerchant = isMerchantOnboardingType(onboardingType);
 
     const record = {
       id: `${pickMappedValue(row, resolvedColumns.resolvedMap.submittedAt) || 'row'}-${index}`,
       sourceRow: index + 2,
       submittedAt,
-      submittedDateKey: toDateKey(submittedAt),
-      submittedDateLabel: formatDisplayDate(submittedAt),
-      submittedAtLabel: formatDisplayDateTime(submittedAt),
+      submittedDateKey: toDateKey(submittedAt) || 'unknown',
+      submittedDateLabel: submittedAt ? formatDisplayDate(submittedAt) : 'Unknown date',
+      submittedAtLabel: submittedAt ? formatDisplayDateTime(submittedAt) : 'Unknown date',
       onboardingType,
       isMerchant,
       businessName: pickMappedValue(row, resolvedColumns.resolvedMap.businessName),
@@ -228,19 +264,25 @@ export function transformMerchantOnboardingRows(rows, meta = {}) {
       phoneNumber: pickMappedValue(row, resolvedColumns.resolvedMap.phoneNumber),
       whatsappNumber: pickMappedValue(row, resolvedColumns.resolvedMap.whatsappNumber),
       storeAddress: pickMappedValue(row, resolvedColumns.resolvedMap.storeAddress),
-      zone: pickMappedValue(row, resolvedColumns.resolvedMap.zone),
+      zone: rawZone || 'Unassigned zone',
       storeType: pickMappedValue(row, resolvedColumns.resolvedMap.storeType),
       trafficBand: pickMappedValue(row, resolvedColumns.resolvedMap.trafficBand),
-      storePhoto: pickMappedValue(row, resolvedColumns.resolvedMap.storePhoto),
-      readiness: pickMappedValue(row, resolvedColumns.resolvedMap.readiness),
-      wantsQr: pickMappedValue(row, resolvedColumns.resolvedMap.wantsQr),
+      storePhoto: rawStorePhoto,
+      readiness: rawReadiness,
+      wantsQr: rawWantsQr,
       existingFinancing: pickMappedValue(row, resolvedColumns.resolvedMap.existingFinancing),
       agentName,
+      rawAgentName,
+      rawZone,
+      hasQrInterest: isAffirmativeValue(rawWantsQr),
+      isHighReadiness: isHighReadinessValue(rawReadiness),
+      hasStorePhoto: Boolean(String(rawStorePhoto || '').trim()),
+      hasValidTimestamp: Boolean(submittedAt),
       notes: pickMappedValue(row, resolvedColumns.resolvedMap.notes),
       raw: row,
     };
 
-    if (!agentName) {
+    if (!rawAgentName) {
       missingAgentName += 1;
     }
 
@@ -252,6 +294,8 @@ export function transformMerchantOnboardingRows(rows, meta = {}) {
   });
 
   const merchantRecords = records.filter((record) => record.isMerchant);
+  const unassignedAgentRows = merchantRecords.filter((record) => !record.rawAgentName).length;
+  const missingTimestampRows = merchantRecords.filter((record) => !record.hasValidTimestamp).length;
 
   return {
     records,
@@ -265,6 +309,8 @@ export function transformMerchantOnboardingRows(rows, meta = {}) {
       nonMerchantRows: records.length - merchantRecords.length,
       missingAgentName,
       missingMerchantBusinessName,
+      unassignedAgentRows,
+      missingTimestampRows,
       duplicateHeaders: (meta.headers || []).filter((header) => /_\d+$/.test(header)),
       latestSubmissionAt: latestDate(records, 'submittedAt'),
       detectedHeaders,
@@ -440,13 +486,21 @@ function buildOnboardingRecordColumns(detectedHeaders, resolvedHeaderMap) {
 
 export function buildDashboardModel({ merchantOnboarding, finalDayReport, sourceResults }) {
   const merchantRecords = merchantOnboarding.merchantRecords;
+  const merchantRecordsSorted = [...merchantRecords].sort((left, right) => {
+    const leftTime = left.submittedAt ? left.submittedAt.getTime() : 0;
+    const rightTime = right.submittedAt ? right.submittedAt.getTime() : 0;
+    return rightTime - leftTime || right.sourceRow - left.sourceRow;
+  });
   const finalDayRecords = finalDayReport.records;
   const allAgents = uniq([
     ...merchantRecords.map((record) => record.agentName),
     ...finalDayRecords.map((record) => record.agentName),
   ]);
+  const merchantOnlyAgents = uniq(merchantRecords.map((record) => record.agentName)).sort((a, b) =>
+    a.localeCompare(b)
+  );
 
-  const onboardingByAgent = allAgents
+  const onboardingByAgent = merchantOnlyAgents
     .map((agentName) => ({
       label: agentName,
       count: merchantRecords.filter((record) => record.agentName === agentName).length,
@@ -467,7 +521,7 @@ export function buildDashboardModel({ merchantOnboarding, finalDayReport, source
   });
 
   const onboardingByDate = [...onboardingByDateMap.values()].sort((left, right) =>
-    left.dateKey.localeCompare(right.dateKey)
+    sortDateKey(left.dateKey, right.dateKey)
   );
 
   const onboardingRecords = [...merchantOnboarding.records].sort((left, right) => {
@@ -522,6 +576,56 @@ export function buildDashboardModel({ merchantOnboarding, finalDayReport, source
       right.merchantsVisited - left.merchantsVisited ||
       left.agentName.localeCompare(right.agentName)
     );
+
+  const agentSummaryMap = new Map();
+  merchantRecordsSorted.forEach((record) => {
+    const existing = agentSummaryMap.get(record.agentName) || {
+      agentName: record.agentName,
+      totalOnboardedMerchants: 0,
+      latestSubmissionAt: null,
+      latestSubmissionDate: 'Unknown date',
+      zones: new Set(),
+      qrActivationInterestCount: 0,
+      highReadinessCount: 0,
+      storePhotoCount: 0,
+    };
+
+    existing.totalOnboardedMerchants += 1;
+    existing.zones.add(record.zone);
+    if (record.hasQrInterest) {
+      existing.qrActivationInterestCount += 1;
+    }
+    if (record.isHighReadiness) {
+      existing.highReadinessCount += 1;
+    }
+    if (record.hasStorePhoto) {
+      existing.storePhotoCount += 1;
+    }
+    if (record.submittedAt && (!existing.latestSubmissionAt || record.submittedAt > existing.latestSubmissionAt)) {
+      existing.latestSubmissionAt = record.submittedAt;
+      existing.latestSubmissionDate = record.submittedAtLabel;
+    }
+
+    agentSummaryMap.set(record.agentName, existing);
+  });
+
+  const agentPerformanceSummary = [...agentSummaryMap.values()]
+    .map((entry) => ({
+      ...entry,
+      zones: [...entry.zones].sort((left, right) => left.localeCompare(right)),
+      zonesLabel: [...entry.zones].sort((left, right) => left.localeCompare(right)).join(', '),
+      percentageShare: merchantOnboarding.stats.merchantRows
+        ? (entry.totalOnboardedMerchants / merchantOnboarding.stats.merchantRows) * 100
+        : 0,
+    }))
+    .sort((left, right) =>
+      right.totalOnboardedMerchants - left.totalOnboardedMerchants ||
+      left.agentName.localeCompare(right.agentName)
+    )
+    .map((entry, index) => ({
+      ...entry,
+      rank: index + 1,
+    }));
 
   const finalDaySummary = {
     reportsSubmitted: finalDayRecords.length,
@@ -615,6 +719,9 @@ export function buildDashboardModel({ merchantOnboarding, finalDayReport, source
       onboardingIgnoredRows:
         merchantOnboarding.stats.rawRowCount - merchantOnboarding.stats.nonBlankRowCount,
       validMerchantRows: merchantOnboarding.stats.merchantRows,
+      uniqueMerchantAgentCount: merchantOnlyAgents.length,
+      unassignedAgentRows: merchantOnboarding.stats.unassignedAgentRows,
+      merchantRowsMissingTimestamp: merchantOnboarding.stats.missingTimestampRows,
       ignoredNonMerchantRows: merchantOnboarding.stats.nonMerchantRows,
       onboardingDetectedHeaders: merchantOnboarding.stats.detectedHeaders,
       onboardingMappedHeaders: merchantOnboarding.stats.mappedHeaders,
@@ -623,6 +730,29 @@ export function buildDashboardModel({ merchantOnboarding, finalDayReport, source
       onboardingHeaderMatches: merchantOnboarding.stats.headerMatches,
       finalDaySourceRows: finalDayReport.stats.rawRowCount,
       finalDayBlankRows: finalDayReport.stats.blankRowsRemoved,
+    },
+    merchantOnboardingRecords: merchantRecordsSorted,
+    agentPerformanceSummary,
+    agentPerformanceFilterOptions: {
+      agents: merchantOnlyAgents,
+      zones: uniq(merchantRecords.map((record) => record.zone)).sort((a, b) => a.localeCompare(b)),
+      qrInterest: uniq(merchantRecords.map((record) => record.wantsQr)).sort((a, b) =>
+        a.localeCompare(b)
+      ),
+      readinessLevels: uniq(merchantRecords.map((record) => record.readiness)).sort((a, b) =>
+        a.localeCompare(b)
+      ),
+      minDate:
+        merchantRecords
+          .filter((record) => record.submittedDateKey !== 'unknown')
+          .map((record) => record.submittedDateKey)
+          .sort(sortDateKey)[0] || '',
+      maxDate:
+        merchantRecords
+          .filter((record) => record.submittedDateKey !== 'unknown')
+          .map((record) => record.submittedDateKey)
+          .sort(sortDateKey)
+          .at(-1) || '',
     },
     onboardingRecords,
     onboardingRecordColumns,

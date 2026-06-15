@@ -1,48 +1,15 @@
 import { useMemo, useState } from 'react';
-import { Bar, Line } from 'react-chartjs-2';
+import { Bar, Line, Pie } from 'react-chartjs-2';
 import EmptyStateCard from '../components/ui/EmptyStateCard';
 import { useData } from '../context/DataContext';
 import Scorecard from '../components/ui/Scorecard';
 import { formatCompactNumber, formatNumber } from '../utils/dataUtils';
 
 const GRID = 'rgba(0,0,0,0.05)';
-const AGENT_TREND_COLORS = [
-  { border: '#1a73e8', background: 'rgba(26, 115, 232, 0.14)' },
-  { border: '#34a853', background: 'rgba(52, 168, 83, 0.14)' },
-  { border: '#9334e6', background: 'rgba(147, 52, 230, 0.14)' },
-  { border: '#ea4335', background: 'rgba(234, 67, 53, 0.14)' },
-  { border: '#f9ab00', background: 'rgba(249, 171, 0, 0.14)' },
-  { border: '#00897b', background: 'rgba(0, 137, 123, 0.14)' },
-];
-const AGENT_DETAIL_COLUMNS = [
-  { key: 'submittedAt', label: 'Timestamp', recordField: 'submittedAtLabel' },
-  { key: 'businessName', label: 'Merchant Business Name', recordField: 'businessName' },
-  { key: 'merchantName', label: 'Merchant Name', recordField: 'merchantName' },
-  { key: 'attendantName', label: 'Store Attendant Name', recordField: 'attendantName' },
-  { key: 'phoneNumber', label: 'Phone Number', recordField: 'phoneNumber' },
-  { key: 'whatsappNumber', label: 'WhatsApp Number', recordField: 'whatsappNumber' },
-  { key: 'storeAddress', label: 'Store Address', recordField: 'storeAddress' },
-  { key: 'zone', label: 'Assigned Zone', recordField: 'zone' },
-  { key: 'storeType', label: 'Type of Store', recordField: 'storeType' },
-  { key: 'trafficBand', label: 'Estimated Daily Customer Traffic', recordField: 'trafficBand' },
-  {
-    key: 'existingFinancing',
-    label: 'Existing Financing Providers',
-    recordField: 'existingFinancing',
-  },
-  { key: 'wantsQr', label: 'QR Activation Interest', recordField: 'wantsQr' },
-  { key: 'readiness', label: 'Merchant Readiness Level', recordField: 'readiness' },
-  { key: 'storePhoto', label: 'Store Photo', recordField: 'storePhoto' },
-  { key: 'notes', label: 'Additional Notes', recordField: 'notes' },
-];
+const PIE_COLORS = ['#1a73e8', '#34a853', '#f9ab00', '#9334e6', '#00897b', '#ea4335', '#5f6368'];
 const baseScales = {
   x: { grid: { color: GRID }, border: { color: 'transparent' } },
   y: { beginAtZero: true, grid: { color: GRID }, border: { color: 'transparent' } },
-};
-const baseOpts = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
 };
 
 export default function Overview() {
@@ -62,6 +29,7 @@ export default function Overview() {
     sourceStatus,
     emptyStates,
   } = dashboard;
+
   const [selectedPerformanceAgent, setSelectedPerformanceAgent] = useState('');
   const [selectedPerformanceZone, setSelectedPerformanceZone] = useState('');
   const [selectedQrInterest, setSelectedQrInterest] = useState('');
@@ -111,18 +79,31 @@ export default function Overview() {
     [filteredAgentPerformanceRecords, summary.totalOnboardedMerchants]
   );
 
-  const performanceTrendChart = useMemo(
-    () => buildAgentTrendChart(filteredAgentPerformanceRecords, filteredAgentPerformanceSummary),
-    [filteredAgentPerformanceRecords, filteredAgentPerformanceSummary]
+  const leaderboardChart = useMemo(
+    () => buildLeaderboardChart(filteredAgentPerformanceSummary),
+    [filteredAgentPerformanceSummary]
   );
-
-  const selectedAgentDetailRows = useMemo(
-    () =>
-      selectedPerformanceAgent
-        ? filteredAgentPerformanceRecords.filter((record) => record.agentName === selectedPerformanceAgent)
-        : [],
+  const onboardingTrendChart = useMemo(
+    () => buildDailyOnboardingTrendChart(filteredAgentPerformanceRecords, selectedPerformanceAgent),
     [filteredAgentPerformanceRecords, selectedPerformanceAgent]
   );
+  const contributionChart = useMemo(
+    () => buildContributionPieChart(filteredAgentPerformanceSummary),
+    [filteredAgentPerformanceSummary]
+  );
+  const zonePerformanceChart = useMemo(
+    () => buildZonePerformanceChart(filteredAgentPerformanceRecords),
+    [filteredAgentPerformanceRecords]
+  );
+  const weekOverWeek = useMemo(
+    () => buildWeekOverWeekMetric(filteredAgentPerformanceRecords),
+    [filteredAgentPerformanceRecords]
+  );
+
+  const topPerformer = filteredAgentPerformanceSummary[0] || null;
+  const bottomPerformer = filteredAgentPerformanceSummary.at(-1) || null;
+  const activeAgentCount = filteredAgentPerformanceSummary.length;
+  const filteredMerchantCount = filteredAgentPerformanceRecords.length;
 
   const filteredOnboardingRecords = useMemo(
     () =>
@@ -158,7 +139,7 @@ export default function Overview() {
     ],
   };
 
-  const trendOptions = {
+  const finalDayTrendOptions = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
@@ -171,19 +152,6 @@ export default function Overview() {
         border: { color: 'transparent' },
       },
     },
-    plugins: {
-      legend: {
-        display: true,
-        position: 'top',
-        labels: { boxWidth: 9, boxHeight: 9, padding: 10 },
-      },
-    },
-  };
-
-  const performanceTrendOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: baseScales,
     plugins: {
       legend: {
         display: true,
@@ -305,15 +273,21 @@ export default function Overview() {
 
       <div className="sec">Growth Partner onboarding performance</div>
 
-      <div className="card" style={{ marginBottom: '12px' }}>
-        <div className="ct">
-          Growth Partner Onboarding Performance
-          <span className="ds">Merchant Onboarding Sheet</span>
+      <section className="performance-shell">
+        <div className="performance-hero">
+          <div>
+            <div className="performance-title">Growth Partner Onboarding Performance</div>
+            <div className="performance-copy">
+              Executive view of live merchant onboarding momentum, contribution mix, and agent performance signals.
+            </div>
+          </div>
+          <div className="performance-meta">
+            <span>{formatNumber(filteredMerchantCount)} merchant row(s)</span>
+            <span>{formatNumber(activeAgentCount)} active agent(s)</span>
+          </div>
         </div>
-        <div className="cs">
-          Merchant-only onboarding performance by field agent, using normalized onboarding-type logic from the live sheet.
-        </div>
-        <div className="records-toolbar">
+
+        <div className="records-toolbar performance-toolbar">
           <select
             className={`flt${selectedPerformanceAgent ? ' active' : ''}`}
             value={selectedPerformanceAgent}
@@ -388,180 +362,140 @@ export default function Overview() {
               Clear filters
             </button>
           ) : null}
-          <div className="records-count">
-            {formatNumber(filteredAgentPerformanceRecords.length)} merchant row(s)
-          </div>
         </div>
-      </div>
 
-      <div className="r g2">
-        <div className="card">
-          <div className="ct">
-            Agent total onboarding summary
-            <span className="ds">Merchant rows only</span>
-          </div>
-          <div className="cs">
-            Latest submission date, assigned zones, QR interest, high readiness, and store-photo coverage by agent.
-          </div>
-          {filteredAgentPerformanceSummary.length ? (
-            <div className="tw">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Agent name</th>
-                    <th>Total onboarded merchants</th>
-                    <th>Latest submission date</th>
-                    <th>Assigned zone(s)</th>
-                    <th>QR activation interest count</th>
-                    <th>High readiness count</th>
-                    <th>Store photo count</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAgentPerformanceSummary.map((row) => (
-                    <tr key={row.agentName}>
-                      <td><b>{row.agentName}</b></td>
-                      <td>{formatNumber(row.totalOnboardedMerchants)}</td>
-                      <td>{row.latestSubmissionDate}</td>
-                      <td>{row.zonesLabel || 'Unassigned zone'}</td>
-                      <td>{formatNumber(row.qrActivationInterestCount)}</td>
-                      <td>{formatNumber(row.highReadinessCount)}</td>
-                      <td>{formatNumber(row.storePhotoCount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {filteredAgentPerformanceSummary.length ? (
+          <>
+            <div className="performance-callouts">
+              <CalloutCard
+                tone="hero"
+                eyebrow="Top performer badge"
+                title={topPerformer?.agentName || 'No top performer yet'}
+                value={`${formatNumber(topPerformer?.totalOnboardedMerchants || 0)} onboardings`}
+                detail={
+                  topPerformer
+                    ? `${formatShare(topPerformer.percentageShare)} share • Latest ${topPerformer.latestSubmissionDate}`
+                    : 'No merchant onboarding rows are available yet.'
+                }
+              />
+              <CalloutCard
+                tone={weekOverWeek.tone}
+                eyebrow="Week-over-week growth %"
+                title={weekOverWeek.valueLabel}
+                value={`${formatNumber(weekOverWeek.currentWeekCount)} this week`}
+                detail={weekOverWeek.detail}
+              />
+              <CalloutCard
+                tone="alert"
+                eyebrow="Bottom performer alert"
+                title={bottomPerformer?.agentName || 'No comparison set'}
+                value={`${formatNumber(bottomPerformer?.totalOnboardedMerchants || 0)} onboardings`}
+                detail={buildBottomPerformerDetail(topPerformer, bottomPerformer, activeAgentCount)}
+              />
+              <CalloutCard
+                tone="neutral"
+                eyebrow="Performance snapshot"
+                title={`${formatNumber(activeAgentCount)} agents contributing`}
+                value={`${formatNumber(filteredMerchantCount)} merchant rows`}
+                detail="Filters above recast every chart and ranking card in this performance view."
+              />
             </div>
-          ) : (
-            <EmptyStateCard
-              title="No merchant onboarding performance rows match these filters"
-              description={
-                summary.totalOnboardedMerchants
-                  ? 'Try broadening the agent, zone, date, QR-interest, or readiness filters.'
-                  : emptyStates.merchant
-              }
-            />
-          )}
-        </div>
 
-        <div className="card">
-          <div className="ct">
-            Agent leaderboard
-            <span className="ds">Merchant rows only</span>
-          </div>
-          <div className="cs">
-            Ranked by highest onboarded merchants first. Share is measured against all valid merchant onboarding rows.
-          </div>
-          {filteredAgentPerformanceSummary.length ? (
-            <div className="tw">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Rank</th>
-                    <th>Agent</th>
-                    <th>Total merchant count</th>
-                    <th>Percentage share</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAgentPerformanceSummary.map((row) => (
-                    <tr key={row.agentName}>
-                      <td>{row.rank}</td>
-                      <td><b>{row.agentName}</b></td>
-                      <td>{formatNumber(row.totalOnboardedMerchants)}</td>
-                      <td>{formatShare(row.percentageShare)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <EmptyStateCard
-              title="No leaderboard rows yet"
-              description={
-                summary.totalOnboardedMerchants
-                  ? 'The current filters removed every merchant onboarding row from the ranking.'
-                  : emptyStates.merchant
-              }
-            />
-          )}
-        </div>
-      </div>
-
-      <div className="card" style={{ marginBottom: '12px' }}>
-        <div className="ct">
-          Agent onboarding trend
-          <span className="ds">By date and field agent</span>
-        </div>
-        <div className="cs">
-          Daily merchant onboarding counts grouped by `Field Agent Name`. Unknown or invalid timestamps are grouped under `Unknown date`.
-        </div>
-        <div className="cw agent-trend-chart">
-          {performanceTrendChart.labels.length ? (
-            <Line data={performanceTrendChart} options={performanceTrendOptions} />
-          ) : (
-            <EmptyStateCard
-              title="No onboarding trend data yet"
-              description={
-                summary.totalOnboardedMerchants
-                  ? 'Adjust the performance filters to include merchant rows with matching agent activity.'
-                  : emptyStates.merchant
-              }
-            />
-          )}
-        </div>
-      </div>
-
-      <div className="card" style={{ marginBottom: '12px' }}>
-        <div className="ct">
-          Agent detail table
-          <span className="ds">Selected agent records</span>
-        </div>
-        <div className="cs">
-          Select an agent above to inspect the merchant onboarding submissions behind their totals.
-        </div>
-        {selectedPerformanceAgent ? (
-          selectedAgentDetailRows.length ? (
-            <div className="tw">
-              <table>
-                <thead>
-                  <tr>
-                    {AGENT_DETAIL_COLUMNS.map((column) => (
-                      <th key={column.key}>
-                        <div>{column.label}</div>
-                        <div className="table-subhead">
-                          {debug.onboardingResolvedHeaderMap?.[column.key] || 'Not found'}
-                        </div>
-                      </th>
+            <div className="ranking-card-grid">
+              {filteredAgentPerformanceSummary.map((agent) => (
+                <article
+                  key={agent.agentName}
+                  className={`ranking-card${selectedPerformanceAgent === agent.agentName ? ' selected' : ''}`}
+                >
+                  <div className="ranking-head">
+                    <div className="ranking-rank">#{agent.rank}</div>
+                    <div className="ranking-share">{formatShare(agent.percentageShare)} share</div>
+                  </div>
+                  <div className="ranking-name">{agent.agentName}</div>
+                  <div className="ranking-total">{formatNumber(agent.totalOnboardedMerchants)}</div>
+                  <div className="ranking-sub">merchant onboardings</div>
+                  <div className="ranking-meta-grid">
+                    <MetricPill label="Latest" value={agent.latestSubmissionDate} />
+                    <MetricPill label="QR interest" value={formatNumber(agent.qrActivationInterestCount)} />
+                    <MetricPill label="High readiness" value={formatNumber(agent.highReadinessCount)} />
+                    <MetricPill label="Store photos" value={formatNumber(agent.storePhotoCount)} />
+                  </div>
+                  <div className="ranking-zones">
+                    {agent.zones.map((zone) => (
+                      <span key={zone} className="zone-chip">{zone}</span>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedAgentDetailRows.map((record) => (
-                    <tr key={record.id}>
-                      {AGENT_DETAIL_COLUMNS.map((column) => (
-                        <td key={column.key}>
-                          {renderTableCellValue(record[column.recordField])}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </div>
+                </article>
+              ))}
             </div>
-          ) : (
-            <EmptyStateCard
-              title="No merchant rows match this agent selection"
-              description="The selected agent has no merchant onboarding rows inside the current zone, date, QR-interest, or readiness filters."
-            />
-          )
+
+            <div className="analytics-grid">
+              <div className="analytics-card analytics-card-wide">
+                <div className="ct">
+                  Leaderboard bar chart
+                  <span className="ds">Highest onboarded merchants first</span>
+                </div>
+                <div className="cs">
+                  Agent ranking by total merchant onboardings in the current filter set.
+                </div>
+                <div className="analytics-chart">
+                  <Bar data={leaderboardChart} options={leaderboardChartOptions} />
+                </div>
+              </div>
+
+              <div className="analytics-card">
+                <div className="ct">
+                  Team contribution pie chart
+                  <span className="ds">Share of merchant onboardings</span>
+                </div>
+                <div className="cs">
+                  Contribution mix across the team. Smaller slices are grouped under `Others` when needed.
+                </div>
+                <div className="analytics-chart">
+                  <Pie data={contributionChart} options={contributionChartOptions} />
+                </div>
+              </div>
+
+              <div className="analytics-card analytics-card-wide">
+                <div className="ct">
+                  Daily onboarding trend line chart
+                  <span className="ds">Merchant onboarding momentum</span>
+                </div>
+                <div className="cs">
+                  {selectedPerformanceAgent
+                    ? `Daily merchant onboarding counts for ${selectedPerformanceAgent}.`
+                    : 'Daily merchant onboarding counts for the full filtered team.'}
+                </div>
+                <div className="analytics-chart">
+                  <Line data={onboardingTrendChart} options={onboardingTrendChartOptions} />
+                </div>
+              </div>
+
+              <div className="analytics-card">
+                <div className="ct">
+                  Zone performance chart
+                  <span className="ds">Merchant onboardings by zone</span>
+                </div>
+                <div className="cs">
+                  Shows where the team is converting the most merchant onboardings right now.
+                </div>
+                <div className="analytics-chart">
+                  <Bar data={zonePerformanceChart} options={zonePerformanceChartOptions} />
+                </div>
+              </div>
+            </div>
+          </>
         ) : (
           <EmptyStateCard
-            title="Choose an agent to view detail rows"
-            description="Use the agent filter above to load that Growth Partner's merchant onboarding submissions."
+            title="No merchant onboarding performance rows match these filters"
+            description={
+              summary.totalOnboardedMerchants
+                ? 'Try broadening the agent, zone, date, QR-interest, or readiness filters.'
+                : emptyStates.merchant
+            }
           />
         )}
-      </div>
+      </section>
 
       <div className="sec">Final day performance</div>
 
@@ -601,7 +535,7 @@ export default function Overview() {
           </div>
           <div className="cw" style={{ height: '200px' }}>
             {dailyActivityTrend.length ? (
-              <Bar data={dailyTrendChart} options={trendOptions} />
+              <Bar data={dailyTrendChart} options={finalDayTrendOptions} />
             ) : (
               <EmptyStateCard
                 title="No daily activity trend yet"
@@ -811,6 +745,26 @@ function MiniStat({ label, value, compact = false }) {
   );
 }
 
+function CalloutCard({ tone, eyebrow, title, value, detail }) {
+  return (
+    <article className={`callout-card ${tone}`}>
+      <div className="callout-eyebrow">{eyebrow}</div>
+      <div className="callout-title">{title}</div>
+      <div className="callout-value">{value}</div>
+      <div className="callout-detail">{detail}</div>
+    </article>
+  );
+}
+
+function MetricPill({ label, value }) {
+  return (
+    <div className="metric-pill">
+      <span>{label}</span>
+      <b>{value}</b>
+    </div>
+  );
+}
+
 function DebugList({ title, items }) {
   return (
     <div className="debug-list">
@@ -885,40 +839,182 @@ function buildAgentPerformanceSummary(records, totalMerchantRows) {
     }));
 }
 
-function buildAgentTrendChart(records, summaryRows) {
-  const dateMap = new Map();
+function buildLeaderboardChart(summaryRows) {
+  const rows = summaryRows.slice(0, 8);
+
+  return {
+    labels: rows.map((row) => row.agentName),
+    datasets: [
+      {
+        label: 'Merchant onboardings',
+        data: rows.map((row) => row.totalOnboardedMerchants),
+        backgroundColor: rows.map((_, index) =>
+          index === 0 ? '#1a73e8' : index === rows.length - 1 ? '#ea4335' : '#9ec2ff'
+        ),
+        borderRadius: 8,
+        barThickness: 18,
+      },
+    ],
+  };
+}
+
+function buildDailyOnboardingTrendChart(records, selectedAgent) {
+  const dailyMap = new Map();
 
   records.forEach((record) => {
     const key = record.submittedDateKey || 'unknown';
-    const existing = dateMap.get(key) || {
+    const existing = dailyMap.get(key) || {
       dateKey: key,
       label: record.submittedDateLabel || 'Unknown date',
-      counts: {},
+      count: 0,
     };
-    existing.counts[record.agentName] = (existing.counts[record.agentName] || 0) + 1;
-    dateMap.set(key, existing);
+    existing.count += 1;
+    dailyMap.set(key, existing);
   });
 
-  const labelsByDate = [...dateMap.values()].sort((left, right) => sortDateKey(left.dateKey, right.dateKey));
-  const agentNames = summaryRows.map((row) => row.agentName);
+  const ordered = [...dailyMap.values()].sort((left, right) => sortDateKey(left.dateKey, right.dateKey));
 
   return {
-    labels: labelsByDate.map((entry) => entry.label),
-    datasets: agentNames.map((agentName, index) => {
-      const palette = AGENT_TREND_COLORS[index % AGENT_TREND_COLORS.length];
-
-      return {
-        label: agentName,
-        data: labelsByDate.map((entry) => entry.counts[agentName] || 0),
-        borderColor: palette.border,
-        backgroundColor: palette.background,
-        tension: 0.25,
-        fill: false,
+    labels: ordered.map((entry) => entry.label),
+    datasets: [
+      {
+        label: selectedAgent ? `${selectedAgent} merchant onboardings` : 'Team merchant onboardings',
+        data: ordered.map((entry) => entry.count),
+        borderColor: '#1a73e8',
+        backgroundColor: 'rgba(26, 115, 232, 0.14)',
+        fill: true,
+        tension: 0.3,
         pointRadius: 3,
         pointHoverRadius: 4,
-      };
-    }),
+      },
+    ],
   };
+}
+
+function buildContributionPieChart(summaryRows) {
+  const topRows = summaryRows.slice(0, 5);
+  const otherCount = summaryRows.slice(5).reduce((sum, row) => sum + row.totalOnboardedMerchants, 0);
+  const labels = topRows.map((row) => row.agentName);
+  const values = topRows.map((row) => row.totalOnboardedMerchants);
+
+  if (otherCount > 0) {
+    labels.push('Others');
+    values.push(otherCount);
+  }
+
+  return {
+    labels,
+    datasets: [
+      {
+        data: values,
+        backgroundColor: labels.map((_, index) => PIE_COLORS[index % PIE_COLORS.length]),
+        borderColor: '#ffffff',
+        borderWidth: 2,
+      },
+    ],
+  };
+}
+
+function buildZonePerformanceChart(records) {
+  const zoneMap = new Map();
+
+  records.forEach((record) => {
+    zoneMap.set(record.zone, (zoneMap.get(record.zone) || 0) + 1);
+  });
+
+  const ordered = [...zoneMap.entries()].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]));
+
+  return {
+    labels: ordered.map(([zone]) => zone),
+    datasets: [
+      {
+        label: 'Merchant onboardings',
+        data: ordered.map(([, count]) => count),
+        backgroundColor: '#34a853',
+        borderRadius: 8,
+        barThickness: 18,
+      },
+    ],
+  };
+}
+
+function buildWeekOverWeekMetric(records) {
+  const datedRecords = records
+    .filter((record) => record.submittedDateKey && record.submittedDateKey !== 'unknown')
+    .map((record) => record.submittedDateKey);
+
+  if (!datedRecords.length) {
+    return {
+      tone: 'neutral',
+      valueLabel: '—',
+      currentWeekCount: 0,
+      previousWeekCount: 0,
+      detail: 'No valid timestamps are available for a week-over-week comparison.',
+    };
+  }
+
+  const latestDate = parseDateKey(datedRecords.sort(sortDateKey).at(-1));
+  const currentStart = addDays(latestDate, -6);
+  const previousStart = addDays(latestDate, -13);
+  const previousEnd = addDays(latestDate, -7);
+
+  const currentWeekCount = records.filter((record) => {
+    const date = parseDateKey(record.submittedDateKey);
+    return date && date >= currentStart && date <= latestDate;
+  }).length;
+
+  const previousWeekCount = records.filter((record) => {
+    const date = parseDateKey(record.submittedDateKey);
+    return date && date >= previousStart && date <= previousEnd;
+  }).length;
+
+  if (!previousWeekCount) {
+    return {
+      tone: 'neutral',
+      valueLabel: '—',
+      currentWeekCount,
+      previousWeekCount,
+      detail: 'No prior-week baseline is available yet for a percentage comparison.',
+    };
+  }
+
+  const growth = ((currentWeekCount - previousWeekCount) / previousWeekCount) * 100;
+
+  return {
+    tone: growth > 0 ? 'up' : growth < 0 ? 'down' : 'neutral',
+    valueLabel: `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`,
+    currentWeekCount,
+    previousWeekCount,
+    detail: `${formatNumber(currentWeekCount)} this week vs ${formatNumber(previousWeekCount)} last week.`,
+  };
+}
+
+function buildBottomPerformerDetail(topPerformer, bottomPerformer, activeAgentCount) {
+  if (!bottomPerformer || activeAgentCount < 2) {
+    return 'At least two active agents are needed before a bottom-performer comparison is meaningful.';
+  }
+
+  const gap = Math.max((topPerformer?.totalOnboardedMerchants || 0) - bottomPerformer.totalOnboardedMerchants, 0);
+  return `${formatNumber(gap)} onboarding(s) behind the current leader in this filter set.`;
+}
+
+function parseDateKey(dateKey) {
+  if (!dateKey || dateKey === 'unknown') {
+    return null;
+  }
+
+  const [year, month, day] = dateKey.split('-').map(Number);
+  if (!year || !month || !day) {
+    return null;
+  }
+
+  return new Date(year, month - 1, day);
+}
+
+function addDays(date, amount) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
 }
 
 function sortDateKey(left, right) {
@@ -960,3 +1056,50 @@ function renderTableCellValue(value) {
 
   return value;
 }
+
+const leaderboardChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  indexAxis: 'y',
+  plugins: {
+    legend: { display: false },
+  },
+  scales: {
+    x: { beginAtZero: true, grid: { color: GRID }, border: { color: 'transparent' } },
+    y: { grid: { display: false }, border: { color: 'transparent' } },
+  },
+};
+
+const onboardingTrendChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+  },
+  scales: baseScales,
+};
+
+const contributionChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: true,
+      position: 'bottom',
+      labels: { boxWidth: 10, boxHeight: 10, padding: 12 },
+    },
+  },
+};
+
+const zonePerformanceChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  indexAxis: 'y',
+  plugins: {
+    legend: { display: false },
+  },
+  scales: {
+    x: { beginAtZero: true, grid: { color: GRID }, border: { color: 'transparent' } },
+    y: { grid: { display: false }, border: { color: 'transparent' } },
+  },
+};
